@@ -20,7 +20,7 @@ At line:1 char:1
     + FullyQualifiedErrorId : UnauthorizedAccess
 ```
 
-ให้รันอันนี้ก่อนแล้วลองใหม่
+Run this and try again
 ```
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 ```
