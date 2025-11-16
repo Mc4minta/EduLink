@@ -10,7 +10,7 @@ export default defineConfig(({ mode }) => ({
     port: 8080,           // fixed port
     strictPort: true,     // do not pick another port
     allowedHosts: [
-      "fc25b31fddab.ngrok-free.app", // <-- add your ngrok host here
+      "ngrokid.ngrok-free.app", // <-- add your ngrok host here
     ],
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
