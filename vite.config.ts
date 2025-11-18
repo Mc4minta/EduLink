@@ -1,3 +1,5 @@
+// vite.config.ts
+
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
@@ -6,12 +8,10 @@ import { componentTagger } from "lovable-tagger";
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
-    host: "::",           // listen on all interfaces (IPv6 + IPv4)
-    port: 8080,           // fixed port
-    strictPort: true,     // do not pick another port
-    allowedHosts: [
-      "ngrokid.ngrok-free.app", // <-- add your ngrok host here
-    ],
+    host: "::",
+    port: 8080,
+    strictPort: true,
+    allowedHosts: [process.env.VITE_ALLOWED_HOSTS],
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {

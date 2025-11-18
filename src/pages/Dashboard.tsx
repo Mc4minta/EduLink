@@ -1,3 +1,4 @@
+// src/pages/Dashboard.tsx
 import { useState, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { Sparkles, FileText, X, Upload } from "lucide-react";
+import config from "@/config";
 
 interface Professor {
   id: string;
@@ -40,7 +42,6 @@ const Dashboard = () => {
   });
 
   const [topicInput, setTopicInput] = useState("");
-
   const [selectedPDF, setSelectedPDF] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -65,6 +66,51 @@ const Dashboard = () => {
       ...formData,
       projectTopics: formData.projectTopics.filter((t) => t !== topic),
     });
+  };
+
+  // -------------------------------
+  // PDF UPLOAD HANDLER
+  // -------------------------------
+  const handleUploadPDF = async () => {
+    if (!selectedPDF) {
+      fileInputRef.current?.click();
+      return;
+    }
+
+    setIsUploadingPDF(true);
+    const data = new FormData();
+    data.append("file", selectedPDF);
+
+    try {
+      const res = await fetch(`${config.API_BASE_URL}/pdf/extract`, {
+        method: "POST",
+        body: data,
+      });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const result = await res.json();
+
+      setFormData({
+        projectName: result.projectName,
+        projectTopics: result.projectTopics,
+        projectDescription: result.projectDescription,
+      });
+
+      toast({
+        title: "PDF Extracted",
+        description: "Content filled into the form.",
+      });
+    } catch (err: any) {
+      console.error(err);
+      toast({
+        title: "Error",
+        description: err.message || "Failed to extract PDF content",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingPDF(false);
+      setSelectedPDF(null);
+    }
   };
 
   // -------------------------------
@@ -106,7 +152,6 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto p-6 max-w-4xl">
-
         <div className="mb-8 animate-fade-in">
           <h1 className="text-4xl font-bold text-foreground mb-2">Dashboard</h1>
           <p className="text-lg text-muted-foreground">
@@ -114,7 +159,6 @@ const Dashboard = () => {
           </p>
         </div>
 
-        {/* Main Card */}
         <Card className="shadow-[var(--shadow-card)] animate-scale-in">
           <CardHeader>
             <div className="flex items-center gap-3">
@@ -132,12 +176,8 @@ const Dashboard = () => {
 
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-
-              {/* --------------------------------------------------- */}
-              {/* PDF UPLOAD UI */}
-              {/* --------------------------------------------------- */}
+              {/* PDF UPLOAD */}
               <div className="flex items-center gap-4 p-4 border-2 border-dashed border-border rounded-lg bg-muted/50">
-
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -146,7 +186,6 @@ const Dashboard = () => {
                   onChange={(e) => {
                     const file = e.target.files?.[0];
                     if (!file) return;
-
                     if (file.type !== "application/pdf") {
                       toast({
                         title: "Invalid File",
@@ -155,52 +194,17 @@ const Dashboard = () => {
                       });
                       return;
                     }
-
                     setSelectedPDF(file);
-                    toast({
-                      title: "PDF Selected",
-                      description: file.name,
-                    });
+                    toast({ title: "PDF Selected", description: file.name });
                   }}
                 />
 
-                {/* BUTTON */}
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   disabled={isUploadingPDF}
-                  onClick={() => {
-                    if (!selectedPDF) {
-                      // browse file
-                      fileInputRef.current?.click();
-                    } else {
-                      // upload & extract
-                      setIsUploadingPDF(true);
-                      toast({
-                        title: "Uploading...",
-                        description: "Extracting content from your PDF...",
-                      });
-
-                      setTimeout(() => {
-                        // mock extracted content
-                        setFormData({
-                          projectName: "AI-Driven Smart Farming System",
-                          projectTopics: ["AI", "Machine Learning", "Agriculture"],
-                          projectDescription:
-                            "This project focuses on developing an AI-powered system for smart farming, including crop prediction, soil analysis, and automated resource management.",
-                        });
-
-                        toast({
-                          title: "Done!",
-                          description: "Content extracted into the form.",
-                        });
-
-                        setIsUploadingPDF(false);
-                        setSelectedPDF(null); // reset so button becomes "Browse PDF" again
-                      }, 2000);
-                    }
-                  }}
+                  onClick={handleUploadPDF}
                 >
                   {isUploadingPDF ? (
                     <>
@@ -220,24 +224,18 @@ const Dashboard = () => {
                   )}
                 </Button>
 
-                {/* FILE NAME */}
                 <div className="flex-1 text-sm text-muted-foreground truncate">
                   {selectedPDF ? selectedPDF.name : "No file selected"}
                 </div>
               </div>
-              {/* END PDF UI */}
 
               {/* Project Name */}
               <div className="space-y-2">
-                <Label htmlFor="projectName" className="text-base">
-                  Project Name
-                </Label>
+                <Label htmlFor="projectName" className="text-base">Project Name</Label>
                 <Input
                   id="projectName"
                   value={formData.projectName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, projectName: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, projectName: e.target.value })}
                   placeholder="e.g., AI-Powered Climate Prediction Model"
                   className="h-12"
                 />
@@ -246,7 +244,6 @@ const Dashboard = () => {
               {/* Project Topics */}
               <div className="space-y-2">
                 <Label className="text-base">Project Topics</Label>
-
                 <Input
                   placeholder="Type a topic and press Enter"
                   value={topicInput}
@@ -275,17 +272,13 @@ const Dashboard = () => {
 
               {/* Project Description */}
               <div className="space-y-2">
-                <Label htmlFor="projectDescription" className="text-base">
-                  Short Project Description
-                </Label>
+                <Label htmlFor="projectDescription" className="text-base">Short Project Description</Label>
                 <Textarea
                   id="projectDescription"
                   rows={6}
                   className="resize-none"
                   value={formData.projectDescription}
-                  onChange={(e) =>
-                    setFormData({ ...formData, projectDescription: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, projectDescription: e.target.value })}
                   placeholder="Describe your project goals, methodology, and what you hope to achieve..."
                 />
               </div>
