@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { Sparkles, FileText, X } from "lucide-react";
+import { Sparkles, FileText, X, Upload } from "lucide-react";
 
 interface Professor {
   id: string;
@@ -29,31 +29,50 @@ const mockProfessors: Professor[] = [
 const Dashboard = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+
   const [isCalculating, setIsCalculating] = useState(false);
+  const [isUploadingPDF, setIsUploadingPDF] = useState(false);
+
   const [formData, setFormData] = useState({
     projectName: "",
     projectTopics: [] as string[],
     projectDescription: "",
   });
+
   const [topicInput, setTopicInput] = useState("");
 
+  const [selectedPDF, setSelectedPDF] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // -------------------------------
+  // TOPIC TAG HANDLING
+  // -------------------------------
   const handleAddTopic = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && topicInput.trim()) {
+    if (e.key === "Enter" && topicInput.trim()) {
       e.preventDefault();
       if (!formData.projectTopics.includes(topicInput.trim())) {
-        setFormData({ ...formData, projectTopics: [...formData.projectTopics, topicInput.trim()] });
+        setFormData({
+          ...formData,
+          projectTopics: [...formData.projectTopics, topicInput.trim()],
+        });
       }
       setTopicInput("");
     }
   };
 
   const handleRemoveTopic = (topic: string) => {
-    setFormData({ ...formData, projectTopics: formData.projectTopics.filter(t => t !== topic) });
+    setFormData({
+      ...formData,
+      projectTopics: formData.projectTopics.filter((t) => t !== topic),
+    });
   };
 
+  // -------------------------------
+  // SUBMIT PROJECT FORM
+  // -------------------------------
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.projectName.trim() || formData.projectTopics.length === 0 || !formData.projectDescription.trim()) {
       toast({
         title: "Missing information",
@@ -65,17 +84,15 @@ const Dashboard = () => {
 
     setIsCalculating(true);
 
-    // Simulate matching calculation
     setTimeout(() => {
       const sorted = [...mockProfessors].sort((a, b) => b.matchScore - a.matchScore);
       setIsCalculating(false);
-      
+
       toast({
         title: "Professors matched!",
         description: `Found ${sorted.length} matching professors for your project.`,
       });
 
-      // Navigate to matches page with results
       navigate("/professor-matches", {
         state: {
           projectName: formData.projectName,
@@ -89,7 +106,7 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto p-6 max-w-4xl">
-        {/* Header */}
+
         <div className="mb-8 animate-fade-in">
           <h1 className="text-4xl font-bold text-foreground mb-2">Dashboard</h1>
           <p className="text-lg text-muted-foreground">
@@ -97,7 +114,7 @@ const Dashboard = () => {
           </p>
         </div>
 
-        {/* Project Entry Form */}
+        {/* Main Card */}
         <Card className="shadow-[var(--shadow-card)] animate-scale-in">
           <CardHeader>
             <div className="flex items-center gap-3">
@@ -112,8 +129,104 @@ const Dashboard = () => {
               </div>
             </div>
           </CardHeader>
+
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
+
+              {/* --------------------------------------------------- */}
+              {/* PDF UPLOAD UI */}
+              {/* --------------------------------------------------- */}
+              <div className="flex items-center gap-4 p-4 border-2 border-dashed border-border rounded-lg bg-muted/50">
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+
+                    if (file.type !== "application/pdf") {
+                      toast({
+                        title: "Invalid File",
+                        description: "Please upload a PDF file.",
+                        variant: "destructive",
+                      });
+                      return;
+                    }
+
+                    setSelectedPDF(file);
+                    toast({
+                      title: "PDF Selected",
+                      description: file.name,
+                    });
+                  }}
+                />
+
+                {/* BUTTON */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={isUploadingPDF}
+                  onClick={() => {
+                    if (!selectedPDF) {
+                      // browse file
+                      fileInputRef.current?.click();
+                    } else {
+                      // upload & extract
+                      setIsUploadingPDF(true);
+                      toast({
+                        title: "Uploading...",
+                        description: "Extracting content from your PDF...",
+                      });
+
+                      setTimeout(() => {
+                        // mock extracted content
+                        setFormData({
+                          projectName: "AI-Driven Smart Farming System",
+                          projectTopics: ["AI", "Machine Learning", "Agriculture"],
+                          projectDescription:
+                            "This project focuses on developing an AI-powered system for smart farming, including crop prediction, soil analysis, and automated resource management.",
+                        });
+
+                        toast({
+                          title: "Done!",
+                          description: "Content extracted into the form.",
+                        });
+
+                        setIsUploadingPDF(false);
+                        setSelectedPDF(null); // reset so button becomes "Browse PDF" again
+                      }, 2000);
+                    }
+                  }}
+                >
+                  {isUploadingPDF ? (
+                    <>
+                      <Sparkles className="mr-2 h-4 w-4 animate-spin" />
+                      Uploading...
+                    </>
+                  ) : selectedPDF ? (
+                    <>
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      Upload & Extract Content
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="mr-2 h-4 w-4" />
+                      Browse PDF
+                    </>
+                  )}
+                </Button>
+
+                {/* FILE NAME */}
+                <div className="flex-1 text-sm text-muted-foreground truncate">
+                  {selectedPDF ? selectedPDF.name : "No file selected"}
+                </div>
+              </div>
+              {/* END PDF UI */}
+
               {/* Project Name */}
               <div className="space-y-2">
                 <Label htmlFor="projectName" className="text-base">
@@ -121,27 +234,27 @@ const Dashboard = () => {
                 </Label>
                 <Input
                   id="projectName"
-                  placeholder="e.g., AI-Powered Climate Prediction Model"
                   value={formData.projectName}
-                  onChange={(e) => setFormData({ ...formData, projectName: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, projectName: e.target.value })
+                  }
+                  placeholder="e.g., AI-Powered Climate Prediction Model"
                   className="h-12"
-                  required
                 />
               </div>
 
-              {/* Project Topics (Tags) */}
+              {/* Project Topics */}
               <div className="space-y-2">
-                <Label htmlFor="projectTopic" className="text-base">
-                  Project Topics
-                </Label>
+                <Label className="text-base">Project Topics</Label>
+
                 <Input
-                  id="projectTopic"
-                  placeholder="Type a topic and press Enter (e.g., Machine Learning, AI, Data Science)"
+                  placeholder="Type a topic and press Enter"
                   value={topicInput}
                   onChange={(e) => setTopicInput(e.target.value)}
                   onKeyDown={handleAddTopic}
                   className="h-12"
                 />
+
                 {formData.projectTopics.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-2">
                     {formData.projectTopics.map((topic) => (
@@ -149,8 +262,8 @@ const Dashboard = () => {
                         {topic}
                         <button
                           type="button"
-                          onClick={() => handleRemoveTopic(topic)}
                           className="ml-2 hover:text-destructive"
+                          onClick={() => handleRemoveTopic(topic)}
                         >
                           <X className="h-3 w-3" />
                         </button>
@@ -167,24 +280,17 @@ const Dashboard = () => {
                 </Label>
                 <Textarea
                   id="projectDescription"
-                  placeholder="Describe your project goals, methodology, and what you hope to achieve..."
-                  value={formData.projectDescription}
-                  onChange={(e) => setFormData({ ...formData, projectDescription: e.target.value })}
                   rows={6}
                   className="resize-none"
-                  required
+                  value={formData.projectDescription}
+                  onChange={(e) =>
+                    setFormData({ ...formData, projectDescription: e.target.value })
+                  }
+                  placeholder="Describe your project goals, methodology, and what you hope to achieve..."
                 />
-                <p className="text-sm text-muted-foreground">
-                  A detailed description helps us find better matches for you
-                </p>
               </div>
 
-              {/* Calculate Match Button */}
-              <Button
-                type="submit"
-                disabled={isCalculating}
-                className="w-full h-12 text-base"
-              >
+              <Button type="submit" disabled={isCalculating} className="w-full h-12 text-base">
                 {isCalculating ? (
                   <>
                     <Sparkles className="mr-2 h-4 w-4 animate-spin" />
