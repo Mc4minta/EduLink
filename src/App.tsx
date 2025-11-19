@@ -22,6 +22,8 @@ import ProfessorMatches from "./pages/ProfessorMatches";
 import FullRank from "./pages/FullRank";
 import NotFound from "./pages/NotFound";
 
+import { ThemeProvider } from "next-themes";
+
 const queryClient = new QueryClient();
 
 const AnimatedRoutes = () => {
@@ -133,6 +135,7 @@ const AnimatedRoutes = () => {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
+    <ThemeProvider attribute="class" defaultTheme="system">
     <TooltipProvider>
       <Toaster />
       <Sonner />
@@ -140,6 +143,7 @@ const App = () => (
         <AnimatedRoutes />
       </BrowserRouter>
     </TooltipProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 
