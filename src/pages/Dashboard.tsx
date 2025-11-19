@@ -70,6 +70,7 @@ const Dashboard = () => {
 
   // -------------------------------
   // PDF UPLOAD HANDLER
+  // (UPDATED TO HANDLE result.data)
   // -------------------------------
   const handleUploadPDF = async () => {
     if (!selectedPDF) {
@@ -90,10 +91,15 @@ const Dashboard = () => {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const result = await res.json();
 
+      // 🔥 FIX: Supports both formats
+      // If backend sends { success: true, data: {...} }
+      // OR old format { projectName, projectTopics, projectDescription }
+      const payload = result.data ?? result;
+
       setFormData({
-        projectName: result.projectName,
-        projectTopics: result.projectTopics,
-        projectDescription: result.projectDescription,
+        projectName: payload.projectName,
+        projectTopics: payload.projectTopics,
+        projectDescription: payload.projectDescription,
       });
 
       toast({
@@ -249,53 +255,49 @@ const Dashboard = () => {
                   value={topicInput}
                   onChange={(e) => setTopicInput(e.target.value)}
                   onKeyDown={handleAddTopic}
-                  className="h-12"
                 />
-
-                {formData.projectTopics.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {formData.projectTopics.map((topic) => (
-                      <Badge key={topic} variant="secondary" className="px-3 py-1 text-sm">
-                        {topic}
-                        <button
-                          type="button"
-                          className="ml-2 hover:text-destructive"
-                          onClick={() => handleRemoveTopic(topic)}
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </Badge>
-                    ))}
-                  </div>
-                )}
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {formData.projectTopics.map((topic) => (
+                    <Badge key={topic} variant="secondary" className="px-3 py-1">
+                      {topic}
+                      <button
+                        type="button"
+                        className="ml-2 text-xs"
+                        onClick={() => handleRemoveTopic(topic)}
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
               </div>
 
               {/* Project Description */}
               <div className="space-y-2">
-                <Label htmlFor="projectDescription" className="text-base">Short Project Description</Label>
+                <Label htmlFor="projectDescription" className="text-base">Project Description</Label>
                 <Textarea
                   id="projectDescription"
-                  rows={6}
-                  className="resize-none"
                   value={formData.projectDescription}
                   onChange={(e) => setFormData({ ...formData, projectDescription: e.target.value })}
-                  placeholder="Describe your project goals, methodology, and what you hope to achieve..."
+                  rows={5}
+                  placeholder="Describe your project in detail..."
                 />
               </div>
 
-              <Button type="submit" disabled={isCalculating} className="w-full h-12 text-base">
+              <Button type="submit" disabled={isCalculating} className="w-full h-12 text-lg">
                 {isCalculating ? (
                   <>
-                    <Sparkles className="mr-2 h-4 w-4 animate-spin" />
-                    Finding Professors...
+                    <Sparkles className="mr-2 h-5 w-5 animate-spin" />
+                    Finding Matches...
                   </>
                 ) : (
                   <>
-                    <Sparkles className="mr-2 h-4 w-4" />
+                    <Sparkles className="mr-2 h-5 w-5" />
                     Find Matching Professors
                   </>
                 )}
               </Button>
+
             </form>
           </CardContent>
         </Card>
