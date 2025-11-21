@@ -1,83 +1,111 @@
+# EduLink 🎓
 
-# Quick Setup - Vite React Project
+EduLink is a modern web platform designed to bridge the gap between students and professors. It facilitates connections for research opportunities, mentorship, and academic collaboration. Built with performance and user experience in mind, it utilizes a cutting-edge React stack.
 
-## 1. Clone project
-```bash
-git clone https://Mc4minta/Edulink.git
-cd Edulink
-```
-## 2. Create .env file
-- Create a file named .env in the project root
-- Add these variables (replace with your own values):
-```txt
-VITE_SUPABASE_URL="https://your-project.supabase.co"
-VITE_SUPABASE_PUBLISHABLE_KEY="your-publishable-key"
-VITE_ALLOWED_HOSTS="your-ngrok-id.ngrok-free.app"
-```
-## 3. Fixing npm error (If found)
+## 🚀 Features
 
-- if you got this error
+- **Smart Matching**: Find professors that align with your research interests.
+- **Profile Management**: Comprehensive profiles for students and professors.
+- **Research Interests**: Tag-based system to highlight academic focus areas.
+- **Dashboard**: Centralized hub for managing connections and activities.
+- **Responsive Design**: Fully optimized for desktop and mobile devices.
 
-```npm : File C:\Program Files\nodejs\npm.ps1 cannot be loaded because running scripts is disabled on this system. For
-more information, see about_Execution_Policies at https:/go.microsoft.com/fwlink/?LinkID=135170.
-At line:1 char:1
-+ npm i
-+ ~~~
-    + CategoryInfo          : SecurityError: (:) [], PSSecurityException
-    + FullyQualifiedErrorId : UnauthorizedAccess
-```
+## 🛠️ Tech Stack
 
-- Run this
+- **Frontend Framework**: [React](https://react.dev/) + [Vite](https://vitejs.dev/)
+- **Language**: [TypeScript](https://www.typescriptlang.org/)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/) + [shadcn/ui](https://ui.shadcn.com/)
+- **State Management**: [TanStack Query](https://tanstack.com/query/latest)
+- **Routing**: [React Router](https://reactrouter.com/)
+- **Backend/Auth**: [Supabase](https://supabase.com/)
+- **Animations**: [Framer Motion](https://www.framer.com/motion/)
 
-```txt
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-```
+## 🏁 Getting Started
 
-- try run npm again
+Follow these steps to get the project up and running on your local machine.
 
-## 4. Hosting this project with ngrok
+### Prerequisites
 
-install dependencies
+Ensure you have the following installed:
+- [Node.js](https://nodejs.org/) (v18 or higher recommended)
+- [npm](https://www.npmjs.com/) (usually comes with Node.js)
 
-```bash
-npm install
-```
+### Installation
 
-run development server
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/Mc4minta/Edulink.git
+   cd Edulink
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Environment Setup**
+   Create a `.env` file in the root directory. You can use the template below:
+   
+   ```env
+   VITE_SUPABASE_URL="https://your-project.supabase.co"
+   VITE_SUPABASE_PUBLISHABLE_KEY="your-publishable-key"
+   # Optional: Only required if using ngrok for testing
+   VITE_ALLOWED_HOSTS="your-ngrok-id.ngrok-free.app"
+   ```
+
+### Running the Application
+
+Start the development server:
 
 ```bash
 npm run dev
 ```
 
-open another terminal and run ngrok
+The application will be available at `http://localhost:8080` (or the port shown in your terminal).
 
-```bash
-ngrok http 8080
+## 📜 Available Scripts
+
+- `npm run dev`: Starts the development server with HMR.
+- `npm run build`: Builds the application for production.
+- `npm run lint`: Runs ESLint to check for code quality issues.
+- `npm run preview`: Locally preview the production build.
+
+## 📂 Project Structure
+
+```
+src/
+├── components/     # Reusable UI components (shadcn/ui, etc.)
+├── hooks/          # Custom React hooks
+├── integrations/   # Third-party integrations (Supabase)
+├── lib/            # Utility functions and libraries
+├── pages/          # Main application views (Dashboard, Auth, etc.)
+├── App.tsx         # Main entry point and routing configuration
+└── main.tsx        # React root rendering
 ```
 
-you will see this output
+## 🔧 Troubleshooting
 
-```bash
-ngrok                                                                                                                                                        (Ctrl+C to quit)                                                                                                                                                                             �  Block threats before they reach your services with new WAF actions → https://ngrok.com/r/waf                                                                                                                                                                                                                                                          Session Status                online                                                                                                                                         Account                       mintaconan4826@gmail.com (Plan: Free)                                                                                                          Update                        update available (version 3.33.0, Ctrl-U to update)                                                                                            Version                       3.22.1                                                                                                                                         Region                        Asia Pacific (ap)                                                                                                                              Web Interface                 http://127.0.0.1:4040                                                                                                                          Forwarding                    https://a5b797cb4aac.ngrok-free.app -> http://localhost:8080                                                                                                                                                                                                                                                                Connections                   ttl     opn     rt1     rt5     p50     p90                                                                                                                                  0       0       0.00    0.00    0.00    0.00      
-```
+### PowerShell Execution Policy Error
+If you encounter an error regarding script execution on Windows (e.g., `npm.ps1 cannot be loaded`):
 
-then copy the link here and paste in .env
+1. Open PowerShell as Administrator.
+2. Run the following command:
+   ```powershell
+   Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+   ```
+3. Try running the npm command again.
 
-```bash
-https://a5b797cb4aac.ngrok-free.app
-```
+## 🌐 Remote Access (Optional)
 
-paste here
+If you need to share your local development server or test on mobile devices, you can use **ngrok**.
 
-```txt
-VITE_SUPABASE_URL="https://your-project.supabase.co"
-VITE_SUPABASE_PUBLISHABLE_KEY="your-publishable-key"
+1. **Start the dev server**: `npm run dev`
+2. **Start ngrok** (in a separate terminal):
+   ```bash
+   ngrok http 8080
+   ```
+3. **Update Environment**: Copy the generated ngrok URL (e.g., `https://xyz.ngrok-free.app`) and update `VITE_ALLOWED_HOSTS` in your `.env` file.
 
-# here
-VITE_ALLOWED_HOSTS="your-ngrok-id.ngrok-free.app"
-```
+---
 
-then access your website using the ngrok link
-
-
-test test
+Developed by the EduLink Team.
