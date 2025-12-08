@@ -1,4 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+import { supabase } from "@/integrations/supabase/client";
+import { fetchStudentProfile, updateStudentProfile, StudentProfile } from "@/services/studentService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,20 +27,57 @@ const ProfileEdit = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [interestInput, setInterestInput] = useState("");
-  
-  // TODO: Load actual user data from Supabase
+
+  // State for authenticated user
+  const [studentId, setStudentId] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+
   const [formData, setFormData] = useState({
-    name: "John Doe",
-    department: "Computer Science",
-    bio: "Passionate about AI and machine learning. Looking to collaborate on research projects.",
+    name: "",
+    department: "",
+    bio: "",
   });
 
-  // TODO: Load actual research interests from Supabase
-  const [researchInterests, setResearchInterests] = useState([
-    "Machine Learning",
-    "Natural Language Processing",
-    "Computer Vision"
-  ]);
+  const [dbName, setDbName] = useState<string | null>(null);
+
+  const [researchInterests, setResearchInterests] = useState<string[]>([]);
+
+  // 1. Get Logged-in User
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setStudentId(user.id);
+        setUserEmail(user.email || null);
+      } else {
+        // Handle unauthenticated state if necessary
+      }
+    };
+    getUser();
+  }, []);
+
+  // 2. Load User Data (only when studentId is available)
+  useEffect(() => {
+    if (!studentId) return;
+
+    if (!studentId) return;
+
+    const loadProfile = async () => {
+      try {
+        const { data } = await fetchStudentProfile(studentId);
+        setFormData({
+          name: data.name || "",
+          department: data.department || "",
+          bio: data.bio || "",
+        });
+        setDbName(data.name || null);
+        setResearchInterests(data.interests || []);
+      } catch (error) {
+        console.error("Failed to load profile", error);
+      }
+    };
+    loadProfile();
+  }, [studentId]);
 
   const handleAddInterest = () => {
     if (interestInput.trim() && !researchInterests.includes(interestInput.trim())) {
@@ -61,7 +101,7 @@ const ProfileEdit = () => {
     setIsDialogOpen(false);
     toast({
       title: "Interests updated!",
-      description: "Your research interests have been saved.",
+      description: "Don't forget to save the entire profile to persist changes.",
     });
   };
 
@@ -69,14 +109,34 @@ const ProfileEdit = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    // TODO: Save to Supabase
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      if (!studentId) throw new Error("Missing Student ID");
+
+      const payload: StudentProfile = {
+        student_id: studentId,
+        email: userEmail,
+        name: formData.name,
+        department: formData.department,
+        bio: formData.bio,
+        interests: researchInterests
+      };
+
+      await updateStudentProfile(payload);
+
       toast({
         title: "Profile updated!",
         description: "Your changes have been saved successfully.",
       });
-    }, 1500);
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Error",
+        description: "Failed to update profile",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -113,7 +173,7 @@ const ProfileEdit = () => {
                 </Label>
                 <Input
                   id="name"
-                  placeholder="John Doe"
+                  placeholder={dbName || "Your full name"}
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
@@ -179,7 +239,7 @@ const ProfileEdit = () => {
                           Add or remove your research interests and topics
                         </DialogDescription>
                       </DialogHeader>
-                      
+
                       <div className="space-y-4 py-4">
                         {/* Input Section */}
                         <div className="space-y-2">

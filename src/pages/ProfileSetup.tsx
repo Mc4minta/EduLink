@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,30 +8,72 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useNavigate } from "react-router-dom";
 import { User, BookOpen } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { updateStudentProfile, StudentProfile } from "@/services/studentService";
 
 const ProfileSetup = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [studentId, setStudentId] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+
   const [formData, setFormData] = useState({
     name: "",
     department: "",
     bio: "",
   });
 
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate("/auth");
+        return;
+      }
+      setStudentId(user.id);
+      setUserEmail(user.email || null);
+    };
+    checkUser();
+  }, [navigate]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // TODO: Save to Supabase
-    setTimeout(() => {
-      setIsLoading(false);
+    if (!studentId) {
+      toast({ title: "Error", description: "Not authenticated", variant: "destructive" });
+      return;
+    }
+
+    try {
+      const payload: StudentProfile = {
+        student_id: studentId,
+        email: userEmail,
+        name: formData.name,
+        department: formData.department,
+        bio: formData.bio,
+        interests: [] // Setup doesn't ask for interests yet
+      };
+
+      await updateStudentProfile(payload);
+
       toast({
         title: "Profile saved!",
         description: "Welcome to your dashboard!",
       });
       navigate("/dashboard");
-    }, 1500);
+
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Error",
+        description: "Could not save profile. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -56,7 +98,7 @@ const ProfileSetup = () => {
               </Label>
               <Input
                 id="name"
-                placeholder="John Doe"
+                placeholder="Your full name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required

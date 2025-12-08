@@ -1,4 +1,7 @@
+import { useState, useEffect } from "react";
 import { GraduationCap, Users, User as UserIcon, LogOut, Settings } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import config from "@/config";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -33,12 +36,53 @@ export function AppSidebar() {
 
   const isActive = (path: string) => currentPath === path;
 
-  // Mock user data - will be replaced with actual user data
-  const userName = "John Doe";
-  const userInitials = "JD";
+  // State for user data
+  const [userName, setUserName] = useState("Student");
+  const [userInitials, setUserInitials] = useState("ST");
 
-  const handleLogout = () => {
-    // TODO: Implement actual logout
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (user) {
+          // 1. Try to get profile from our backend
+          const res = await fetch(`${config.API_BASE_URL}/student/profile/${user.id}`);
+
+          if (res.ok) {
+            const json = await res.json();
+            if (json.data && json.data.name) {
+              setUserName(json.data.name);
+              // Calculate initials
+              const nameParts = json.data.name.split(' ');
+              if (nameParts.length >= 2) {
+                setUserInitials(`${nameParts[0][0]}${nameParts[1][0]}`.toUpperCase());
+              } else if (nameParts.length === 1) {
+                setUserInitials(nameParts[0].substring(0, 2).toUpperCase());
+              }
+              return;
+            }
+          }
+
+          // 2. Fallback to auth metadata if backend profile not found/incomplete
+          if (user.user_metadata?.full_name) {
+            setUserName(user.user_metadata.full_name);
+            // logic for initials
+          } else if (user.email) {
+            setUserName(user.email.split('@')[0]);
+            setUserInitials(user.email.substring(0, 2).toUpperCase());
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching user profile:", error);
+      }
+    };
+
+    fetchUserProfile();
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     navigate("/auth");
   };
 
@@ -88,7 +132,7 @@ export function AppSidebar() {
 
       <SidebarFooter className="p-4">
         <Separator className="mb-4" />
-        
+
         {/* User Profile Section */}
         <div className={`flex items-center gap-3 mb-4 ${isCollapsed ? "justify-center" : ""}`}>
           <Avatar className="h-10 w-10">

@@ -1,5 +1,5 @@
 // src/pages/Dashboard.tsx
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { Sparkles, FileText, X, Upload } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import config from "@/config";
 
 interface Professor {
@@ -122,8 +123,31 @@ const Dashboard = () => {
   // -------------------------------
   // SUBMIT PROJECT FORM
   // -------------------------------
+  // -------------------------------
+  // SUBMIT PROJECT FORM
+  // -------------------------------
+  const [studentId, setStudentId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate("/auth");
+        return;
+      }
+      setStudentId(user.id);
+    };
+    checkUser();
+  }, [navigate]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!studentId) {
+      toast({ title: "Error", description: "You must be logged in.", variant: "destructive" });
+      navigate("/auth");
+      return;
+    }
 
     if (!formData.projectName.trim() || formData.projectTopics.length === 0 || !formData.projectDescription.trim()) {
       toast({
@@ -136,23 +160,59 @@ const Dashboard = () => {
 
     setIsCalculating(true);
 
-    setTimeout(() => {
-      const sorted = [...mockProfessors].sort((a, b) => b.matchScore - a.matchScore);
-      setIsCalculating(false);
+    try {
+      // 1. Prepare Payload (match Backend Schema: ProjectInput)
+      const payload = {
+        project_name: formData.projectName,
+        project_topics: formData.projectTopics,
+        short_description: formData.projectDescription,
+        student_id: studentId
+      };
+
+      // 2. Call Backend API
+      const res = await fetch(`${config.API_BASE_URL}/student/submit`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.detail || "Failed to submit project");
+      }
+
+      const result = await res.json();
+
+      // 3. Handle Success
+      const matches = result.matches || [];
 
       toast({
         title: "Professors matched!",
-        description: `Found ${sorted.length} matching professors for your project.`,
+        description: `Found ${matches.length} matching professors for your project.`,
       });
 
+      // 4. Navigate with Real Data
       navigate("/professor-matches", {
         state: {
           projectName: formData.projectName,
           projectTopics: formData.projectTopics,
           projectDescription: formData.projectDescription,
+          matches: matches, // Pass real matches to the next page
         },
       });
-    }, 1500);
+
+    } catch (err: any) {
+      console.error(err);
+      toast({
+        title: "Error finding matches",
+        description: err.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsCalculating(false);
+    }
   };
 
   return (
