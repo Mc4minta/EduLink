@@ -1,45 +1,49 @@
+// src/pages/FullRank.tsx
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, Mail, User, GraduationCap, BookOpen } from "lucide-react";
+import { ArrowLeft, Mail, User, GraduationCap, BookOpen, Loader2 } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
-import { ProfessorMatch } from "./ProfessorMatches";
-/*
-interface Professor {
-  id: number;
-  name: string;
-  department: string;
-  researchAreas: string[];
-  matchScore: number;
-  email: string;
+export interface ProfessorMatch {
+  professor_name: string;
+  author_id: string; // The backend returns "author_id" (prof_id)
+  score: number;
+  topics_set: string[];
+  email?: string;
+  department?: string;
+  // matchScore is sometimes used in frontend for display logic normalization
 }
-*/
 
 const FullRank = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  // Safe cast and default empty array
   const matches = (location.state?.matches || []) as ProfessorMatch[];
   const { projectName, projectTopics, projectDescription } = location.state || {};
 
-  /*
-  const allProfessors: Professor[] = [
-    // ... removed mock data ...
-  ];
-  */
-
   const handleSendEmail = (professor: ProfessorMatch) => {
-    const email = professor.email || "professor@university.edu";
+    const email = professor.email || "professor@university.edu"; // Fallback
     window.location.href = `mailto:${email}?subject=Research Collaboration: ${projectName}`;
   };
 
-  if (!projectName) {
+  const getInitials = (name: string) => {
+    return (name || "U")
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  if (!projectName && matches.length === 0) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-6">
         <Card>
           <CardContent className="pt-6">
-            <p className="text-muted-foreground mb-4">No project data found. Please submit a project first.</p>
+            <p className="text-muted-foreground mb-4">No ranking data found. Please submit a project first.</p>
             <Button onClick={() => navigate("/dashboard")}>
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Dashboard
@@ -61,7 +65,7 @@ const FullRank = () => {
             className="gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back
+            Back to Top Matches
           </Button>
           <div>
             <h1 className="text-3xl font-bold">Complete Professor Ranking</h1>
@@ -76,14 +80,14 @@ const FullRank = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BookOpen className="h-5 w-5 text-primary" />
-              {projectName}
+              {projectName || "Untitled Project"}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div>
               <p className="text-sm font-medium mb-2">Topics:</p>
               <div className="flex flex-wrap gap-2">
-                {projectTopics?.map((topic: string, index: number) => (
+                {(projectTopics || []).map((topic: string, index: number) => (
                   <Badge key={index} variant="secondary">
                     {topic}
                   </Badge>
@@ -113,12 +117,16 @@ const FullRank = () => {
                     <div className="flex-1 space-y-3">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex items-start gap-3">
-                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-sm shrink-0">
-                            #{index + 1}
-                          </div>
+                          <Avatar className="h-10 w-10 border-2 border-background shadow-sm">
+                            <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                              {getInitials(professor.professor_name)}
+                            </AvatarFallback>
+                          </Avatar>
+
                           <div>
                             <h3 className="text-xl font-semibold flex items-center gap-2">
-                              <GraduationCap className="h-5 w-5 text-primary" />
+                              {/* Rank Indicator */}
+                              <span className="text-muted-foreground text-base font-normal">#{index + 1}</span>
                               {professor.professor_name}
                             </h3>
                             {professor.department && (
@@ -133,7 +141,10 @@ const FullRank = () => {
                       </div>
 
                       <div>
-                        <p className="text-sm font-medium mb-2">Topic Overlaps:</p>
+                        {/* Only show label if topics exist */}
+                        {professor.topics_set && professor.topics_set.length > 0 && (
+                          <p className="text-sm font-medium mb-2">Expertise / Matched Topics:</p>
+                        )}
                         <div className="flex flex-wrap gap-2">
                           {(professor.topics_set || []).slice(0, 5).map((area, areaIndex) => (
                             <Badge key={areaIndex} variant="outline">
