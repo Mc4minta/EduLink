@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -25,19 +26,58 @@ const ProfileEdit = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [interestInput, setInterestInput] = useState("");
   
-  // TODO: Load actual user data from Supabase
+  // Load user data from Supabase
   const [formData, setFormData] = useState({
-    name: "John Doe",
-    department: "Computer Science",
-    bio: "Passionate about AI and machine learning. Looking to collaborate on research projects.",
+    name: "",
+    department: "",
+    bio: "",
   });
 
-  // TODO: Load actual research interests from Supabase
-  const [researchInterests, setResearchInterests] = useState([
-    "Machine Learning",
-    "Natural Language Processing",
-    "Computer Vision"
-  ]);
+  const [researchInterests, setResearchInterests] = useState<string[]>([]);
+
+  useState(() => {
+    const fetchProfile = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          navigate("/auth");
+          return;
+        }
+
+        const { data: student, error } = await supabase
+          .from('Student')
+          .select('*')
+          .eq('student_id', user.id)
+          .single();
+
+        if (error) {
+          console.error("Error fetching profile:", error);
+          return;
+        }
+
+        if (student) {
+          setFormData({
+            name: student.name || "",
+            department: student.department || "",
+            bio: student.bio || "",
+          });
+          
+          if (student.interests) {
+            // Assuming interests is stored as a comma-separated string or JSON
+            // Adjust based on actual schema. Handling both for robustness.
+            if (Array.isArray(student.interests)) {
+                 setResearchInterests(student.interests);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error loading profile:", error);
+      }
+    };
+
+    fetchProfile();
+  });
 
   const handleAddInterest = () => {
     if (interestInput.trim() && !researchInterests.includes(interestInput.trim())) {
@@ -69,14 +109,48 @@ const ProfileEdit = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    // TODO: Save to Supabase
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to save profile.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const updates = {
+        student_id: user.id,
+        name: formData.name,
+        department: formData.department,
+        bio: formData.bio,
+        interests: researchInterests, // Supabase usually handles array columns fine if defined as such
+        email: user.email, 
+      };
+
+      const { error } = await supabase
+        .from('Student')
+        .upsert(updates);
+
+      if (error) throw error;
+
       toast({
         title: "Profile updated!",
         description: "Your changes have been saved successfully.",
       });
-    }, 1500);
+    } catch (error: any) {
+      console.error("Error updating profile:", error);
+      const message = error.message || (error instanceof Error ? error.message : "An unknown error occurred");
+      toast({
+        title: "Error updating profile",
+        description: message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

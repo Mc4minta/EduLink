@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,19 +20,76 @@ const ProfileSetup = () => {
     bio: "",
   });
 
+  useState(() => {
+    const fetchProfile = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: student } = await supabase
+            .from('Student')
+            .select('*')
+            .eq('student_id', user.id)
+            .single();
+
+          if (student) {
+            setFormData({
+              name: student.name || "",
+              department: student.department || "",
+              bio: student.bio || "",
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+      }
+    };
+    fetchProfile();
+  });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // TODO: Save to Supabase
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "No user found. Please log in again.",
+          variant: "destructive", 
+        });
+        return;
+      }
+
+      const { error } = await supabase
+        .from('Student')
+        .upsert({
+          student_id: user.id,
+          name: formData.name,
+          department: formData.department,
+          bio: formData.bio,
+          email: user.email,
+        });
+
+      if (error) throw error;
+
       toast({
         title: "Profile saved!",
         description: "Welcome to your dashboard!",
       });
       navigate("/dashboard");
-    }, 1500);
+    } catch (error: any) {
+        console.error("Error saving profile:", error);
+        const message = error.message || (error instanceof Error ? error.message : "An unknown error occurred");
+        toast({
+          title: "Error saving profile",
+          description: message,
+          variant: "destructive",
+        });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

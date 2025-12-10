@@ -10,23 +10,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { Sparkles, FileText, X, Upload } from "lucide-react";
 import config from "@/config";
-
-interface Professor {
-  id: string;
-  name: string;
-  department: string;
-  email: string;
-  matchScore: number;
-  expertise: string[];
-}
-
-const mockProfessors: Professor[] = [
-  { id: "1", name: "Dr. Sarah Chen", department: "Computer Science", email: "s.chen@university.edu", matchScore: 95, expertise: ["Machine Learning", "AI", "Data Science"] },
-  { id: "2", name: "Dr. Michael Roberts", department: "Engineering", email: "m.roberts@university.edu", matchScore: 88, expertise: ["Robotics", "AI Systems", "Control Theory"] },
-  { id: "3", name: "Dr. Emily Thompson", department: "Applied Mathematics", email: "e.thompson@university.edu", matchScore: 82, expertise: ["Optimization", "Statistical Modeling", "Data Analysis"] },
-  { id: "4", name: "Dr. James Wilson", department: "Computer Science", email: "j.wilson@university.edu", matchScore: 78, expertise: ["Natural Language Processing", "Deep Learning"] },
-  { id: "5", name: "Dr. Lisa Anderson", department: "Information Systems", email: "l.anderson@university.edu", matchScore: 72, expertise: ["Data Mining", "Business Intelligence", "Analytics"] },
-];
+import { apiClient } from "@/services/api";
+import { supabase } from "@/integrations/supabase/client";
 
 const Dashboard = () => {
   const { toast } = useToast();
@@ -44,6 +29,22 @@ const Dashboard = () => {
   const [topicInput, setTopicInput] = useState("");
   const [selectedPDF, setSelectedPDF] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Student ID (can be from auth context in production)
+  const [studentId, setStudentId] = useState("");
+
+  useState(() => {
+    const fetchUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setStudentId(user.id);
+      } else {
+        // Handle unauthenticated case, maybe redirect?
+        // navigate("/auth");
+      }
+    };
+    fetchUser();
+  });
 
   // -------------------------------
   // TOPIC TAG HANDLING
@@ -70,7 +71,6 @@ const Dashboard = () => {
 
   // -------------------------------
   // PDF UPLOAD HANDLER
-  // (UPDATED TO HANDLE result.data)
   // -------------------------------
   const handleUploadPDF = async () => {
     if (!selectedPDF) {
@@ -79,33 +79,24 @@ const Dashboard = () => {
     }
 
     setIsUploadingPDF(true);
-    const data = new FormData();
-    data.append("file", selectedPDF);
 
     try {
-      const res = await fetch(`${config.API_BASE_URL}/pdf/extract`, {
-        method: "POST",
-        body: data,
-      });
+      const result = await apiClient.extractPDF(selectedPDF);
 
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const result = await res.json();
+      if (result.success && result.data) {
+        setFormData({
+          projectName: result.data.title || "",
+          projectTopics: result.data.keywords || [],
+          projectDescription: result.data.abstract || "",
+        });
 
-      // 🔥 FIX: Supports both formats
-      // If backend sends { success: true, data: {...} }
-      // OR old format { projectName, projectTopics, projectDescription }
-      const payload = result.data ?? result;
-
-      setFormData({
-        projectName: payload.projectName,
-        projectTopics: payload.projectTopics,
-        projectDescription: payload.projectDescription,
-      });
-
-      toast({
-        title: "PDF Extracted",
-        description: "Content filled into the form.",
-      });
+        toast({
+          title: "PDF Extracted",
+          description: "Content filled into the form.",
+        });
+      } else {
+        throw new Error("Failed to extract PDF");
+      }
     } catch (err: any) {
       console.error(err);
       toast({
@@ -136,23 +127,43 @@ const Dashboard = () => {
 
     setIsCalculating(true);
 
-    setTimeout(() => {
-      const sorted = [...mockProfessors].sort((a, b) => b.matchScore - a.matchScore);
-      setIsCalculating(false);
+    try {
+      // Call backend API to submit project and get matches
+      const response = await apiClient.submitProject({
+        project_name: formData.projectName,
+        project_topics: formData.projectTopics,
+        short_description: formData.projectDescription,
+        created_by: studentId,
+      });
 
+      if (response.status === "success") {
+        toast({
+          title: "Professors matched!",
+          description: `Found ${response.matches?.length || 0} matching professors for your project.`,
+        });
+
+        // Navigate to results page with student ID
+        navigate("/professor-matches", {
+          state: {
+            projectName: formData.projectName,
+            projectTopics: formData.projectTopics,
+            projectDescription: formData.projectDescription,
+            studentId: studentId,
+          },
+        });
+      } else {
+        throw new Error(response.message || "Failed to match professors");
+      }
+    } catch (err: any) {
+      console.error(err);
       toast({
-        title: "Professors matched!",
-        description: `Found ${sorted.length} matching professors for your project.`,
+        title: "Error",
+        description: err.message || "Failed to find matching professors",
+        variant: "destructive",
       });
-
-      navigate("/professor-matches", {
-        state: {
-          projectName: formData.projectName,
-          projectTopics: formData.projectTopics,
-          projectDescription: formData.projectDescription,
-        },
-      });
-    }, 1500);
+    } finally {
+      setIsCalculating(false);
+    }
   };
 
   return (
@@ -237,7 +248,9 @@ const Dashboard = () => {
 
               {/* Project Name */}
               <div className="space-y-2">
-                <Label htmlFor="projectName" className="text-base">Project Name</Label>
+                <Label htmlFor="projectName" className="text-base">
+                  Project Name
+                </Label>
                 <Input
                   id="projectName"
                   value={formData.projectName}
@@ -274,11 +287,15 @@ const Dashboard = () => {
 
               {/* Project Description */}
               <div className="space-y-2">
-                <Label htmlFor="projectDescription" className="text-base">Project Description</Label>
+                <Label htmlFor="projectDescription" className="text-base">
+                  Project Description
+                </Label>
                 <Textarea
                   id="projectDescription"
                   value={formData.projectDescription}
-                  onChange={(e) => setFormData({ ...formData, projectDescription: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, projectDescription: e.target.value })
+                  }
                   rows={5}
                   placeholder="Describe your project in detail..."
                 />
@@ -297,7 +314,6 @@ const Dashboard = () => {
                   </>
                 )}
               </Button>
-
             </form>
           </CardContent>
         </Card>

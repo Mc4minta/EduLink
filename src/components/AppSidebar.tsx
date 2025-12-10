@@ -1,4 +1,6 @@
 import { GraduationCap, Users, User as UserIcon, LogOut, Settings } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from "react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -33,13 +35,44 @@ export function AppSidebar() {
 
   const isActive = (path: string) => currentPath === path;
 
-  // Mock user data - will be replaced with actual user data
-  const userName = "John Doe";
-  const userInitials = "JD";
+  const [userName, setUserName] = useState("Loading...");
+  const [userInitials, setUserInitials] = useState("..");
 
-  const handleLogout = () => {
-    // TODO: Implement actual logout
-    navigate("/auth");
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: student } = await supabase
+          .from('Student')
+          .select('name')
+          .eq('student_id', user.id)
+          .single();
+        
+        if (student?.name) {
+          setUserName(student.name);
+          const initials = student.name
+            .split(' ')
+            .map((n: string) => n[0])
+            .join('')
+            .toUpperCase()
+            .slice(0, 2);
+          setUserInitials(initials);
+        } else {
+             setUserName("No Name");
+             setUserInitials("??");
+        }
+      }
+    };
+    fetchProfile();
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      navigate("/auth");
+    } catch (error) {
+      console.error("Error logging out:", error);
+    }
   };
 
   return (

@@ -37,8 +37,28 @@ const Auth = () => {
       return;
     }
 
-    toast({ title: "Welcome back!" });
-    navigate("/profile-setup");
+    const checkProfileAndRedirect = async (userId: string) => {
+      try {
+        const { data: student, error } = await supabase
+          .from('Student')
+          .select('student_id')
+          .eq('student_id', userId)
+          .single();
+        
+        if (student) {
+          navigate("/dashboard");
+        } else {
+          navigate("/profile-setup");
+        }
+      } catch (error) {
+        console.error("Error checking profile:", error);
+        navigate("/profile-setup");
+      }
+    };
+
+    if (data.session) {
+      await checkProfileAndRedirect(data.session.user.id);
+    }
   };
 
   const handleSignup = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -61,7 +81,10 @@ const Auth = () => {
     }
 
     toast({ title: "Account created!", description: "Check your email to confirm your account." });
-    if (data.session) navigate("/profile-setup");
+    if (data.session) {
+      // New signup usually won't have a profile, but safe to check or just send to setup
+      navigate("/profile-setup");
+    }
   };
 
   return (

@@ -1,70 +1,67 @@
 import { useLocation, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, Mail, User, GraduationCap, BookOpen } from "lucide-react";
-
-interface Professor {
-  id: number;
-  name: string;
-  department: string;
-  researchAreas: string[];
-  matchScore: number;
-  email: string;
-}
+import { ArrowLeft, Mail, User, GraduationCap, BookOpen, Loader2 } from "lucide-react";
+import { apiClient, Professor } from "@/services/api";
+import { useToast } from "@/hooks/use-toast";
 
 const MatchingResults = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { projectName, projectTopics, projectDescription } = location.state || {};
+  const { toast } = useToast();
+  const { projectName, projectTopics, projectDescription, studentId } = location.state || {};
 
-  // Mock professor data with match scores
-  const mockProfessors: Professor[] = [
-    {
-      id: 1,
-      name: "Dr. Sarah Chen",
-      department: "Computer Science",
-      researchAreas: ["Machine Learning", "AI Ethics", "Natural Language Processing"],
-      matchScore: 95,
-      email: "sarah.chen@university.edu"
-    },
-    {
-      id: 2,
-      name: "Dr. Michael Rodriguez",
-      department: "Data Science",
-      researchAreas: ["Deep Learning", "Computer Vision", "Neural Networks"],
-      matchScore: 88,
-      email: "m.rodriguez@university.edu"
-    },
-    {
-      id: 3,
-      name: "Dr. Emily Watson",
-      department: "Information Systems",
-      researchAreas: ["Human-Computer Interaction", "UX Research", "AI Applications"],
-      matchScore: 82,
-      email: "e.watson@university.edu"
-    },
-    {
-      id: 4,
-      name: "Dr. James Kim",
-      department: "Computer Science",
-      researchAreas: ["Robotics", "AI", "Machine Learning"],
-      matchScore: 78,
-      email: "j.kim@university.edu"
+  const [professors, setProfessors] = useState<Professor[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!projectName || !studentId) {
+      setError("No project data found. Please submit a project first.");
+      return;
     }
-  ];
 
-  const handleSendEmail = (professor: Professor) => {
-    window.location.href = `mailto:${professor.email}?subject=Research Collaboration: ${projectName}`;
-  };
+    const fetchMatches = async () => {
+      setLoading(true);
+      setError(null);
 
-  if (!projectName) {
+      try {
+        const response = await apiClient.matchProfessors(studentId, "tfidf", 10);
+
+        if (response.success && response.data.matches) {
+          setProfessors(response.data.matches);
+          toast({
+            title: "Success",
+            description: `Found ${response.data.matches.length} matching professors`,
+          });
+        } else {
+          setError("Failed to fetch professor matches");
+        }
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Failed to fetch matches";
+        setError(errorMessage);
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMatches();
+  }, [projectName, studentId, toast]);
+
+  if (error && !projectName) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-6">
         <Card>
           <CardContent className="pt-6">
-            <p className="text-muted-foreground mb-4">No project data found. Please submit a project first.</p>
+            <p className="text-muted-foreground mb-4">{error}</p>
             <Button onClick={() => navigate("/dashboard")}>
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Dashboard
@@ -80,8 +77,8 @@ const MatchingResults = () => {
       <div className="max-w-6xl mx-auto p-6 space-y-6">
         {/* Header with back button */}
         <div className="flex items-center gap-4">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={() => navigate("/dashboard")}
             className="gap-2"
           >
@@ -91,7 +88,7 @@ const MatchingResults = () => {
           <div>
             <h1 className="text-3xl font-bold">Top Professor Matches</h1>
             <p className="text-muted-foreground mt-1">
-              Showing top {mockProfessors.length} professors matching your project
+              Showing {loading ? "loading..." : professors.length} professors matching your project
             </p>
           </div>
         </div>
@@ -124,74 +121,112 @@ const MatchingResults = () => {
           </CardContent>
         </Card>
 
+        {/* Loading State */}
+        {loading && (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center space-y-4">
+              <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+              <p className="text-muted-foreground">Finding the best professor matches...</p>
+            </div>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <Card className="border-destructive">
+            <CardContent className="pt-6">
+              <p className="text-destructive">{error}</p>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Professor Results */}
-        <div className="space-y-4">
-          {mockProfessors.slice(0, 4).map((professor) => (
-            <Card key={professor.id} className="shadow-[var(--shadow-card)] hover:shadow-lg transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                  <div className="flex-1 space-y-3">
-                    <div className="flex items-start justify-between gap-4">
+        {!loading && professors.length > 0 && (
+          <div className="space-y-4">
+            {professors.slice(0, 4).map((professor, index) => (
+              <Card key={index} className="shadow-[var(--shadow-card)] hover:shadow-lg transition-shadow">
+                <CardContent className="p-6">
+                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                    <div className="flex-1 space-y-3">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <h3 className="text-xl font-semibold flex items-center gap-2">
+                            <GraduationCap className="h-5 w-5 text-primary" />
+                            {professor.professor_name}
+                          </h3>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {professor.author_id}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-2xl font-bold text-primary">
+                            {(professor.score * 100).toFixed(0)}%
+                          </div>
+                          <p className="text-xs text-muted-foreground">Match Score</p>
+                        </div>
+                      </div>
+
                       <div>
-                        <h3 className="text-xl font-semibold flex items-center gap-2">
-                          <GraduationCap className="h-5 w-5 text-primary" />
-                          {professor.name}
-                        </h3>
-                        <p className="text-sm text-muted-foreground mt-1">{professor.department}</p>
+                        <p className="text-sm font-medium mb-2">Specialization:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {professor.topics_set?.split(",").map((topic, idx) => (
+                            <Badge key={idx} variant="outline">
+                              {topic.trim()}
+                            </Badge>
+                          ))}
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-primary">{professor.matchScore}%</div>
-                        <p className="text-xs text-muted-foreground">Match Score</p>
-                      </div>
+
+                      <Progress value={professor.score * 100} className="h-2" />
                     </div>
 
-                    <div>
-                      <p className="text-sm font-medium mb-2">Research Areas:</p>
-                      <div className="flex flex-wrap gap-2">
-                        {professor.researchAreas.map((area, index) => (
-                          <Badge key={index} variant="outline">
-                            {area}
-                          </Badge>
-                        ))}
-                      </div>
+                    <div className="flex lg:flex-col gap-2 lg:w-40">
+                      <Button
+                        variant="outline"
+                        className="flex-1 lg:w-full gap-2"
+                        onClick={() => navigate(`/profile/${professor.author_id}`)}
+                      >
+                        <User className="h-4 w-4" />
+                        View Profile
+                      </Button>
+                      <Button
+                        className="flex-1 lg:w-full gap-2"
+                        onClick={() => {
+                          window.location.href = `mailto:contact@university.edu?subject=Research Collaboration: ${projectName}`;
+                        }}
+                      >
+                        <Mail className="h-4 w-4" />
+                        Contact
+                      </Button>
                     </div>
-
-                    <Progress value={professor.matchScore} className="h-2" />
                   </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
 
-                  <div className="flex lg:flex-col gap-2 lg:w-40">
-                    <Button
-                      variant="outline"
-                      className="flex-1 lg:w-full gap-2"
-                      onClick={() => navigate(`/profile/${professor.id}`)}
-                    >
-                      <User className="h-4 w-4" />
-                      View Profile
-                    </Button>
-                    <Button
-                      className="flex-1 lg:w-full gap-2"
-                      onClick={() => handleSendEmail(professor)}
-                    >
-                      <Mail className="h-4 w-4" />
-                      Send Email
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        {/* No Results State */}
+        {!loading && professors.length === 0 && !error && (
+          <Card>
+            <CardContent className="pt-6">
+              <p className="text-muted-foreground text-center">No professor matches found.</p>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Show Full Rank Button */}
-        <div className="flex justify-center pt-4">
-          <Button
-            size="lg"
-            onClick={() => navigate("/full-rank", { state: { projectName, projectTopics, projectDescription } })}
-            className="gap-2"
-          >
-            View Full Ranking
-          </Button>
-        </div>
+        {professors.length > 4 && (
+          <div className="flex justify-center pt-4">
+            <Button
+              size="lg"
+              onClick={() => navigate("/full-rank", { state: { projectName, projectTopics, projectDescription, studentId, professors } })}
+              className="gap-2"
+            >
+              View Full Ranking ({professors.length} results)
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
