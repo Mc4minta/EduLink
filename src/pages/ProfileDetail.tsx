@@ -26,7 +26,7 @@ const ExpertiseCard: React.FC<ExpertiseCardProps> = ({ expertise }) => {
   const displayedExpertise = expanded ? expertise : expertise.slice(0, MAX_VISIBLE);
 
   return (
-    <Card className="shadow-lg rounded-xl backdrop-blur-sm bg-white/30 border border-white/20 p-4 animate-slide-up">
+    <Card className="shadow-md rounded-xl animate-slide-up">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg font-semibold">
           <Sparkles className="h-5 w-5 text-secondary" />
@@ -36,11 +36,7 @@ const ExpertiseCard: React.FC<ExpertiseCardProps> = ({ expertise }) => {
       <CardContent>
         <div className="flex flex-wrap gap-2">
           {displayedExpertise.map((item, idx) => (
-            <Badge
-              key={idx}
-              variant="secondary"
-              className="text-sm py-2 px-3 hover:scale-105 transition-transform"
-            >
+            <Badge key={idx} variant="secondary" className="text-sm py-2 px-3">
               {item}
             </Badge>
           ))}
@@ -49,7 +45,7 @@ const ExpertiseCard: React.FC<ExpertiseCardProps> = ({ expertise }) => {
         {expertise.length > MAX_VISIBLE && (
           <button
             onClick={() => setExpanded(!expanded)}
-            className="mt-2 text-sm text-primary hover:underline transition-colors"
+            className="mt-2 text-sm text-primary hover:underline"
           >
             {expanded ? "Show Less" : `+${expertise.length - MAX_VISIBLE} More`}
           </button>
@@ -109,7 +105,7 @@ const ProfileDetail = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
       </div>
     );
@@ -118,7 +114,7 @@ const ProfileDetail = () => {
   if (error || !profile) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <Card className="max-w-md text-center p-8 shadow-lg rounded-xl">
+        <Card className="max-w-md text-center p-8 shadow-md rounded-xl">
           <p className="text-muted-foreground mb-4">{error || "Profile not found"}</p>
           <Button onClick={() => navigate("/dashboard")}>Back to Dashboard</Button>
         </Card>
@@ -127,7 +123,7 @@ const ProfileDetail = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5 py-8">
+    <div className="min-h-screen bg-background py-8">
       <div className="container mx-auto max-w-4xl px-4">
         {/* Back Button */}
         <Button
@@ -140,7 +136,7 @@ const ProfileDetail = () => {
         </Button>
 
         {/* Profile Header */}
-        <Card className="mb-6 shadow-lg rounded-2xl backdrop-blur-sm bg-white/30 border border-white/20 p-6 flex flex-col md:flex-row items-center md:items-start gap-6">
+        <Card className="mb-6 shadow-md rounded-2xl p-6 flex flex-col md:flex-row items-center md:items-start gap-6">
           <div className="relative">
             <Avatar className="h-28 w-28 ring-4 ring-primary/30 shadow-lg">
               <AvatarFallback className="bg-primary/10 text-primary text-4xl">
@@ -149,10 +145,7 @@ const ProfileDetail = () => {
             </Avatar>
             {profile.matchScore !== undefined && (
               <div className="absolute -bottom-2 -right-2">
-                <Progress
-                  value={profile.matchScore}
-                  className="h-12 w-12 rounded-full"
-                />
+                <Progress value={profile.matchScore} className="h-12 w-12 rounded-full" />
               </div>
             )}
           </div>
@@ -170,7 +163,7 @@ const ProfileDetail = () => {
 
             <div className="flex flex-wrap gap-3 mt-4">
               <Button
-                className="flex items-center gap-2 bg-gradient-to-r from-primary to-secondary text-white hover:scale-105 transition-transform"
+                className="flex items-center gap-2 bg-primary text-white hover:scale-105 transition-transform"
                 onClick={() => (window.location.href = `mailto:${profile.email}`)}
               >
                 <Mail className="h-4 w-4" />
@@ -191,7 +184,7 @@ const ProfileDetail = () => {
           {/* Left Column */}
           <div className="md:col-span-2 space-y-6">
             {profile.bio && (
-              <Card className="shadow-lg rounded-xl backdrop-blur-sm bg-white/30 border border-white/20 p-4 animate-slide-up">
+              <Card className="shadow-md rounded-xl p-4 animate-slide-up">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg font-semibold">
                     <BookOpen className="h-5 w-5 text-primary" />
@@ -209,7 +202,7 @@ const ProfileDetail = () => {
 
           {/* Right Sidebar */}
           <div className="space-y-6">
-            <Card className="shadow-lg rounded-xl backdrop-blur-sm bg-white/30 border border-white/20 p-4 animate-slide-up" style={{ animationDelay: "0.2s" }}>
+            <Card className="shadow-md rounded-xl p-4 animate-slide-up" style={{ animationDelay: "0.2s" }}>
               <CardHeader>
                 <CardTitle className="text-lg font-semibold">Contact</CardTitle>
               </CardHeader>
