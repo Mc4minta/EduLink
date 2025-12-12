@@ -37,7 +37,7 @@ const MatchingResults = () => {
       <div className="min-h-screen bg-background flex items-center justify-center p-6">
         <Card>
           <CardContent className="pt-6">
-            <p className="text-muted-foreground mb-4">No project data found. Please submit a project first.</p>
+            <p className="text-muted-foreground mb-4">No professor matched.</p>
             <Button onClick={() => navigate("/dashboard")}>
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Dashboard

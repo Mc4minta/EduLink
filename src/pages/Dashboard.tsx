@@ -86,11 +86,7 @@ const Dashboard = () => {
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const result = await res.json();
-
-      // 🔥 FIX: Supports both formats
-      // If backend sends { success: true, data: {...} }
-      // OR old format { projectName, projectTopics, projectDescription }
-      const payload = result.data ?? result;
+      const payload = result.data
 
       setFormData({
         projectName: payload.projectName,
@@ -139,12 +135,20 @@ const Dashboard = () => {
     e.preventDefault();
 
     if (!studentId) {
-      toast({ title: "Error", description: "You must be logged in.", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "You must be logged in.",
+        variant: "destructive",
+      });
       navigate("/auth");
       return;
     }
 
-    if (!formData.projectName.trim() || formData.projectTopics.length === 0 || !formData.projectDescription.trim()) {
+    if (
+      !formData.projectName.trim() ||
+      formData.projectTopics.length === 0 ||
+      !formData.projectDescription.trim()
+    ) {
       toast({
         title: "Missing information",
         description: "Please fill in all fields to find matching professors.",
@@ -156,16 +160,15 @@ const Dashboard = () => {
     setIsCalculating(true);
 
     try {
-      // 1. Prepare Payload (match Backend Schema: ProjectInput)
+      // 1️⃣ SUBMIT PROJECT
       const payload = {
         project_name: formData.projectName,
         project_topics: formData.projectTopics,
         short_description: formData.projectDescription,
-        student_id: studentId
+        student_id: studentId,
       };
 
-      // 2. Call Backend API
-      const res = await fetch(`${config.API_BASE_URL}/student/submit`, {
+      const submitRes = await fetch(`${config.API_BASE_URL}/student/submit`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -174,41 +177,54 @@ const Dashboard = () => {
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) {
-        const errData = await res.json();
+      if (!submitRes.ok) {
+        const errData = await submitRes.json();
         throw new Error(errData.detail || "Failed to submit project");
       }
 
-      const result = await res.json();
+      const submitResult = await submitRes.json();
+      const projectId = submitResult.project_id;
 
-      // 3. Handle Success
-      const matches = result.matches || [];
+      const matchRes = await fetch(
+        `${config.API_BASE_URL}/matching/${projectId}`,
+        {
+          method: "GET",
+          headers: {
+            "ngrok-skip-browser-warning": "true",
+          },
+        }
+      );
+
+      if (!matchRes.ok) {
+        const errData = await matchRes.json();
+        throw new Error(errData.detail || "Matching failed");
+      }
+
+      const matchResult = await matchRes.json();
+      const matches = matchResult.matches || [];
 
       toast({
         title: "Professors matched!",
-        description: `Found ${matches.length} matching professors for your project.`,
+        description: `Found ${matches.length} matching professors.`,
       });
 
-      // 4. Navigate with Real Data
+      // 4️⃣ Navigate
       navigate("/professor-matches", {
         state: {
-          projectName: formData.projectName,
-          projectTopics: formData.projectTopics,
-          projectDescription: formData.projectDescription,
-          matches: matches, // Pass real matches to the next page
+          matches,
+          projectId,
         },
       });
 
     } catch (err: any) {
-      console.error(err);
       toast({
-        title: "Error finding matches",
+        title: "Error",
         description: err.message,
         variant: "destructive",
       });
-    } finally {
-      setIsCalculating(false);
     }
+
+    setIsCalculating(false);
   };
 
   return (
