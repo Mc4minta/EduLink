@@ -208,9 +208,12 @@ const Dashboard = () => {
         description: `Found ${matches.length} matching professors.`,
       });
 
-      // 4️⃣ Navigate
+      // 4️⃣ Navigate with complete project data
       navigate("/professor-matches", {
         state: {
+          projectName: formData.projectName,
+          projectTopics: formData.projectTopics,
+          projectDescription: formData.projectDescription,
           matches,
           projectId,
         },
