@@ -1,31 +1,28 @@
-// src/pages/FullRank.tsx
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, Mail, User, GraduationCap, BookOpen, Loader2 } from "lucide-react";
+import { ArrowLeft, Mail, User, GraduationCap, BookOpen } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export interface ProfessorMatch {
   professor_name: string;
-  author_id: string; // The backend returns "author_id" (prof_id)
+  author_id: string;
   score: number;
   topics_set: string[];
   email?: string;
   department?: string;
-  // matchScore is sometimes used in frontend for display logic normalization
 }
 
 const FullRank = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  // Safe cast and default empty array
   const matches = (location.state?.matches || []) as ProfessorMatch[];
   const { projectName, projectTopics, projectDescription } = location.state || {};
 
   const handleSendEmail = (professor: ProfessorMatch) => {
-    const email = professor.email || "professor@university.edu"; // Fallback
+    const email = professor.email || "professor@university.edu";
     window.location.href = `mailto:${email}?subject=Research Collaboration: ${projectName}`;
   };
 
@@ -57,7 +54,7 @@ const FullRank = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-6xl mx-auto p-6 space-y-6">
-        {/* Header with back button */}
+        {/* Header */}
         <div className="flex items-center gap-4">
           <Button
             variant="outline"
@@ -75,7 +72,7 @@ const FullRank = () => {
           </div>
         </div>
 
-        {/* Project Summary Card */}
+        {/* Project Summary */}
         <Card className="shadow-[var(--shadow-card)]">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -88,9 +85,7 @@ const FullRank = () => {
               <p className="text-sm font-medium mb-2">Topics:</p>
               <div className="flex flex-wrap gap-2">
                 {(projectTopics || []).map((topic: string, index: number) => (
-                  <Badge key={index} variant="secondary">
-                    {topic}
-                  </Badge>
+                  <Badge key={index} variant="secondary">{topic}</Badge>
                 ))}
               </div>
             </div>
@@ -103,12 +98,10 @@ const FullRank = () => {
           </CardContent>
         </Card>
 
-        {/* Professor Results */}
+        {/* Professor Rankings */}
         <div className="space-y-4">
           {matches.length === 0 ? (
-            <div className="text-center py-10 text-muted-foreground">
-              No matches found to rank.
-            </div>
+            <div className="text-center py-10 text-muted-foreground">No matches found to rank.</div>
           ) : (
             matches.map((professor, index) => (
               <Card key={professor.author_id} className="shadow-[var(--shadow-card)] hover:shadow-lg transition-shadow">
@@ -118,14 +111,10 @@ const FullRank = () => {
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex items-start gap-3">
                           <Avatar className="h-10 w-10 border-2 border-background shadow-sm">
-                            <AvatarFallback className="bg-primary/10 text-primary font-bold">
-                              {getInitials(professor.professor_name)}
-                            </AvatarFallback>
+                            <AvatarFallback className="bg-primary/10 text-primary font-bold">{getInitials(professor.professor_name)}</AvatarFallback>
                           </Avatar>
-
                           <div>
                             <h3 className="text-xl font-semibold flex items-center gap-2">
-                              {/* Rank Indicator */}
                               <span className="text-muted-foreground text-base font-normal">#{index + 1}</span>
                               {professor.professor_name}
                             </h3>
@@ -134,27 +123,30 @@ const FullRank = () => {
                             )}
                           </div>
                         </div>
+
+                        {/* Score display with decimals */}
                         <div className="text-right">
-                          <div className="text-2xl font-bold text-primary">{(professor.score * 100).toFixed(0)}%</div>
+                          <div className="text-2xl font-bold text-primary">{(professor.score * 100).toFixed(2)}%</div>
                           <p className="text-xs text-muted-foreground">Match Score</p>
                         </div>
                       </div>
 
                       <div>
-                        {/* Only show label if topics exist */}
-                        {professor.topics_set && professor.topics_set.length > 0 && (
-                          <p className="text-sm font-medium mb-2">Expertise / Matched Topics:</p>
-                        )}
+                        {professor.topics_set?.length > 0 && <p className="text-sm font-medium mb-2">Expertise / Matched Topics:</p>}
                         <div className="flex flex-wrap gap-2">
                           {(professor.topics_set || []).slice(0, 5).map((area, areaIndex) => (
-                            <Badge key={areaIndex} variant="outline">
-                              {area}
-                            </Badge>
+                            <Badge key={areaIndex} variant="outline">{area}</Badge>
                           ))}
                         </div>
                       </div>
 
-                      <Progress value={professor.score * 100} className="h-2" />
+                      {/* Progress with tooltip for decimals */}
+                      <div className="relative group">
+                        <Progress value={professor.score * 100} className="h-2" />
+                        <div className="absolute -top-6 right-0 opacity-0 group-hover:opacity-100 transition-opacity text-xs bg-gray-800 text-white px-2 py-1 rounded shadow-lg">
+                          {(professor.score * 100).toFixed(2)}%
+                        </div>
+                      </div>
                     </div>
 
                     <div className="flex lg:flex-col gap-2 lg:w-40">

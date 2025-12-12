@@ -8,11 +8,9 @@ import { ArrowLeft, Mail, User, GraduationCap, BookOpen } from "lucide-react";
 // Based on backend formatted_results
 export interface ProfessorMatch {
   professor_name: string;
-  author_id: string; // The backend returns "author_id" (prof_id)
+  author_id: string;
   score: number;
   topics_set: string[];
-  // email and department are not returned by the match_professors_hybrid RPC yet!
-  // We'll treat them as optional or handle them gracefully
   email?: string;
   department?: string;
 }
@@ -21,16 +19,14 @@ const MatchingResults = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { projectName, projectTopics, projectDescription } = location.state || {};
-
   const matches = (location.state?.matches || []) as ProfessorMatch[];
 
   const handleSendEmail = (professor: ProfessorMatch) => {
-    const email = professor.email || "professor@university.edu"; // Fallback if no email
+    const email = professor.email || "professor@university.edu";
     window.location.href = `mailto:${email}?subject=Research Collaboration: ${projectName}`;
   };
 
-  // Safe slicing in case fewer matches are returned
-  const topMatches = matches.slice(0, 4);
+  const topMatches = matches.slice(0, 5); // Display top 5 with rank
 
   if (!projectName) {
     return (
@@ -51,7 +47,7 @@ const MatchingResults = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-6xl mx-auto p-6 space-y-6">
-        {/* Header with back button */}
+        {/* Header */}
         <div className="flex items-center gap-4">
           <Button
             variant="outline"
@@ -104,23 +100,34 @@ const MatchingResults = () => {
               No matches found. Try adjusting your project details.
             </div>
           ) : (
-            topMatches.map((professor) => (
-              <Card key={professor.author_id} className="shadow-[var(--shadow-card)] hover:shadow-lg transition-shadow">
+            topMatches.map((professor, index) => (
+              <Card
+                key={professor.author_id}
+                className="shadow-[var(--shadow-card)] hover:shadow-lg transition-shadow"
+              >
                 <CardContent className="p-6">
                   <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                     <div className="flex-1 space-y-3">
                       <div className="flex items-start justify-between gap-4">
                         <div>
                           <h3 className="text-xl font-semibold flex items-center gap-2">
+                            {/* Rank indicator */}
+                            <span className="text-muted-foreground text-base font-normal">
+                              #{index + 1}
+                            </span>
                             <GraduationCap className="h-5 w-5 text-primary" />
                             {professor.professor_name}
                           </h3>
                           {professor.department && (
-                            <p className="text-sm text-muted-foreground mt-1">{professor.department}</p>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {professor.department}
+                            </p>
                           )}
                         </div>
                         <div className="text-right">
-                          <div className="text-2xl font-bold text-primary">{(professor.score * 100).toFixed(0)}%</div>
+                          <div className="text-2xl font-bold text-primary">
+                            {(professor.score * 100).toFixed(2)}%
+                          </div>
                           <p className="text-xs text-muted-foreground">Match Score</p>
                         </div>
                       </div>
@@ -128,15 +135,21 @@ const MatchingResults = () => {
                       <div>
                         <p className="text-sm font-medium mb-2">Topic Overlaps:</p>
                         <div className="flex flex-wrap gap-2">
-                          {(professor.topics_set || []).slice(0, 5).map((area, index) => (
-                            <Badge key={index} variant="outline">
+                          {(professor.topics_set || []).slice(0, 5).map((area, idx) => (
+                            <Badge key={idx} variant="outline">
                               {area}
                             </Badge>
                           ))}
                         </div>
                       </div>
 
-                      <Progress value={professor.score * 100} className="h-2" />
+                      {/* Progress bar with tooltip */}
+                      <div className="relative group">
+                        <Progress value={professor.score * 100} className="h-2" />
+                        <div className="absolute -top-6 right-0 opacity-0 group-hover:opacity-100 transition-opacity text-xs bg-gray-800 text-white px-2 py-1 rounded shadow-lg">
+                          {(professor.score * 100).toFixed(2)}%
+                        </div>
+                      </div>
                     </div>
 
                     <div className="flex lg:flex-col gap-2 lg:w-40">
@@ -167,7 +180,11 @@ const MatchingResults = () => {
         <div className="flex justify-center pt-4">
           <Button
             size="lg"
-            onClick={() => navigate("/full-rank", { state: { projectName, projectTopics, projectDescription, matches } })}
+            onClick={() =>
+              navigate("/full-rank", {
+                state: { projectName, projectTopics, projectDescription, matches },
+              })
+            }
             className="gap-2"
           >
             View Full Ranking
