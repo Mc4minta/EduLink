@@ -15,30 +15,30 @@ const ComingSoon = () => {
           alt="Coming Soon"
           className="w-64 h-64 mx-auto mb-8 rounded-2xl"
         />
-        
+
         <h1 className="text-4xl font-bold text-foreground mb-4">
           Professor Portal Coming Soon! 🎓
         </h1>
-        
+
         <p className="text-xl text-muted-foreground mb-6">
           We're building your space next!
         </p>
-        
+
         <p className="text-base text-muted-foreground max-w-md mx-auto mb-8">
-          Our team is working hard to create an amazing experience for professors. 
+          Our team is working hard to create an amazing experience for professors.
           You'll soon be able to connect with passionate students who share your research interests.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Button
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/Dashboard")}
             variant="outline"
             className="gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Home
           </Button>
-          
+
           <Button
             onClick={() => window.location.href = "mailto:support@edulink.com"}
             className="gap-2"
