@@ -10,7 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { BookOpen, Mail, Lock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { VITE_API_URL } from "@/integrations/supabase/config";
+import config from "@/config";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -49,7 +49,7 @@ const Auth = () => {
     }
 
     try {
-      const res = await fetch(`${VITE_API_URL}/student/profile/${user.id}`, {
+      const res = await fetch(`${config.API_BASE_URL}/student/profile/${user.id}`, {
         headers: { "ngrok-skip-browser-warning": "true" }
       });
 
