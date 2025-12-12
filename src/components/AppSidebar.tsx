@@ -22,8 +22,8 @@ import { useProfile } from "@/contexts/ProfileContext";
 
 const menuItems = [
   { title: "Matches", url: "/dashboard", icon: Users },
-  { title: "My Profile", url: "/profile", icon: UserIcon },
-  { title: "Settings", url: "/settings", icon: Settings },
+  { title: "My Profile", url: "/profile", icon: UserIcon }// ,
+  // { title: "Settings", url: "/settings", icon: Settings },
 ];
 
 export function AppSidebar() {
