@@ -1,5 +1,5 @@
 // src/pages/Dashboard.tsx
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { Sparkles, FileText, X, Upload } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import config from "@/config";
 
 interface Professor {
@@ -19,14 +20,6 @@ interface Professor {
   matchScore: number;
   expertise: string[];
 }
-
-const mockProfessors: Professor[] = [
-  { id: "1", name: "Dr. Sarah Chen", department: "Computer Science", email: "s.chen@university.edu", matchScore: 95, expertise: ["Machine Learning", "AI", "Data Science"] },
-  { id: "2", name: "Dr. Michael Roberts", department: "Engineering", email: "m.roberts@university.edu", matchScore: 88, expertise: ["Robotics", "AI Systems", "Control Theory"] },
-  { id: "3", name: "Dr. Emily Thompson", department: "Applied Mathematics", email: "e.thompson@university.edu", matchScore: 82, expertise: ["Optimization", "Statistical Modeling", "Data Analysis"] },
-  { id: "4", name: "Dr. James Wilson", department: "Computer Science", email: "j.wilson@university.edu", matchScore: 78, expertise: ["Natural Language Processing", "Deep Learning"] },
-  { id: "5", name: "Dr. Lisa Anderson", department: "Information Systems", email: "l.anderson@university.edu", matchScore: 72, expertise: ["Data Mining", "Business Intelligence", "Analytics"] },
-];
 
 const Dashboard = () => {
   const { toast } = useToast();
@@ -85,16 +78,15 @@ const Dashboard = () => {
     try {
       const res = await fetch(`${config.API_BASE_URL}/pdf/extract`, {
         method: "POST",
+        headers: {
+          "ngrok-skip-browser-warning": "true",
+        },
         body: data,
       });
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const result = await res.json();
-
-      // 🔥 FIX: Supports both formats
-      // If backend sends { success: true, data: {...} }
-      // OR old format { projectName, projectTopics, projectDescription }
-      const payload = result.data ?? result;
+      const payload = result.data
 
       setFormData({
         projectName: payload.projectName,
@@ -122,10 +114,41 @@ const Dashboard = () => {
   // -------------------------------
   // SUBMIT PROJECT FORM
   // -------------------------------
+  // -------------------------------
+  // SUBMIT PROJECT FORM
+  // -------------------------------
+  const [studentId, setStudentId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate("/auth");
+        return;
+      }
+      setStudentId(user.id);
+    };
+    checkUser();
+  }, [navigate]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.projectName.trim() || formData.projectTopics.length === 0 || !formData.projectDescription.trim()) {
+    if (!studentId) {
+      toast({
+        title: "Error",
+        description: "You must be logged in.",
+        variant: "destructive",
+      });
+      navigate("/auth");
+      return;
+    }
+
+    if (
+      !formData.projectName.trim() ||
+      formData.projectTopics.length === 0 ||
+      !formData.projectDescription.trim()
+    ) {
       toast({
         title: "Missing information",
         description: "Please fill in all fields to find matching professors.",
@@ -136,23 +159,75 @@ const Dashboard = () => {
 
     setIsCalculating(true);
 
-    setTimeout(() => {
-      const sorted = [...mockProfessors].sort((a, b) => b.matchScore - a.matchScore);
-      setIsCalculating(false);
+    try {
+      // 1️⃣ SUBMIT PROJECT
+      const payload = {
+        project_name: formData.projectName,
+        project_topics: formData.projectTopics,
+        short_description: formData.projectDescription,
+        student_id: studentId,
+      };
+
+      const submitRes = await fetch(`${config.API_BASE_URL}/student/submit`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!submitRes.ok) {
+        const errData = await submitRes.json();
+        throw new Error(errData.detail || "Failed to submit project");
+      }
+
+      const submitResult = await submitRes.json();
+      const projectId = submitResult.project_id;
+
+      const matchRes = await fetch(
+        `${config.API_BASE_URL}/matching/${projectId}`,
+        {
+          method: "GET",
+          headers: {
+            "ngrok-skip-browser-warning": "true",
+          },
+        }
+      );
+
+      if (!matchRes.ok) {
+        const errData = await matchRes.json();
+        throw new Error(errData.detail || "Matching failed");
+      }
+
+      const matchResult = await matchRes.json();
+      const matches = matchResult.matches || [];
 
       toast({
         title: "Professors matched!",
-        description: `Found ${sorted.length} matching professors for your project.`,
+        description: `Found ${matches.length} matching professors.`,
       });
 
+      // 4️⃣ Navigate with complete project data
       navigate("/professor-matches", {
         state: {
           projectName: formData.projectName,
           projectTopics: formData.projectTopics,
           projectDescription: formData.projectDescription,
+          matches,
+          projectId,
         },
       });
-    }, 1500);
+
+    } catch (err: any) {
+      toast({
+        title: "Error",
+        description: err.message,
+        variant: "destructive",
+      });
+    }
+
+    setIsCalculating(false);
   };
 
   return (

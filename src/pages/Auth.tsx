@@ -10,6 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { BookOpen, Mail, Lock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import config from "@/config";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -33,13 +34,47 @@ const Auth = () => {
     setIsLoading(false);
 
     if (error) {
-      toast({ title: "Sign in failed", description: error.message, variant: "destructive" });
+      toast({
+        title: "Sign in failed",
+        description: error.message,
+        variant: "destructive",
+      });
       return;
     }
 
-    toast({ title: "Welcome back!" });
-    navigate("/profile-setup");
+    const user = data.user;
+    if (!user) {
+      toast({ title: "No user data returned", variant: "destructive" });
+      return;
+    }
+
+    try {
+      const res = await fetch(`${config.API_BASE_URL}/student/profile/${user.id}`, {
+        headers: { "ngrok-skip-browser-warning": "true" }
+      });
+
+
+      if (res.status === 404) {
+        navigate("/profile-setup");
+        return;
+      }
+
+      const json = await res.json();
+      const profile = json.data;
+      console.log(profile);
+
+      if (profile.is_setup) {
+        navigate("/Dashboard");
+      } else {
+        navigate("/profile-setup");
+      }
+
+    } catch (err) {
+      console.error("Profile fetch failed", err);
+      navigate("/profile-setup");
+    }
   };
+
 
   const handleSignup = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
