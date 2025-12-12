@@ -21,14 +21,6 @@ interface Professor {
   expertise: string[];
 }
 
-const mockProfessors: Professor[] = [
-  { id: "1", name: "Dr. Sarah Chen", department: "Computer Science", email: "s.chen@university.edu", matchScore: 95, expertise: ["Machine Learning", "AI", "Data Science"] },
-  { id: "2", name: "Dr. Michael Roberts", department: "Engineering", email: "m.roberts@university.edu", matchScore: 88, expertise: ["Robotics", "AI Systems", "Control Theory"] },
-  { id: "3", name: "Dr. Emily Thompson", department: "Applied Mathematics", email: "e.thompson@university.edu", matchScore: 82, expertise: ["Optimization", "Statistical Modeling", "Data Analysis"] },
-  { id: "4", name: "Dr. James Wilson", department: "Computer Science", email: "j.wilson@university.edu", matchScore: 78, expertise: ["Natural Language Processing", "Deep Learning"] },
-  { id: "5", name: "Dr. Lisa Anderson", department: "Information Systems", email: "l.anderson@university.edu", matchScore: 72, expertise: ["Data Mining", "Business Intelligence", "Analytics"] },
-];
-
 const Dashboard = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -86,6 +78,9 @@ const Dashboard = () => {
     try {
       const res = await fetch(`${config.API_BASE_URL}/pdf/extract`, {
         method: "POST",
+        headers: {
+          "ngrok-skip-browser-warning": "true",
+        },
         body: data,
       });
 
@@ -174,6 +169,7 @@ const Dashboard = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true",
         },
         body: JSON.stringify(payload),
       });

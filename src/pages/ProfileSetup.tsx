@@ -53,7 +53,6 @@ const ProfileSetup = () => {
         name: formData.name,
         department: formData.department,
         bio: formData.bio,
-        interests: [] // Setup doesn't ask for interests yet
       };
 
       await updateStudentProfile(payload);

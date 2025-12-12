@@ -6,7 +6,6 @@ export interface StudentProfile {
     name: string;
     department: string;
     bio: string;
-    interests: string[];
 }
 
 export interface ApiResponse<T> {
@@ -20,7 +19,11 @@ export interface ApiResponse<T> {
  * @returns An ApiResponse containing the StudentProfile.
  */
 export const fetchStudentProfile = async (studentId: string): Promise<ApiResponse<StudentProfile>> => {
-    const res = await fetch(`${config.API_BASE_URL}/student/profile/${studentId}`);
+    const res = await fetch(`${config.API_BASE_URL}/student/profile/${studentId}`, {
+        headers: {
+            "ngrok-skip-browser-warning": "true",
+        },
+    });
     if (!res.ok) {
         throw new Error(`Failed to fetch profile: ${res.statusText}`);
     }
@@ -35,7 +38,10 @@ export const fetchStudentProfile = async (studentId: string): Promise<ApiRespons
 export const updateStudentProfile = async (profile: StudentProfile): Promise<any> => {
     const res = await fetch(`${config.API_BASE_URL}/student/profile`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+            "Content-Type": "application/json",
+            "ngrok-skip-browser-warning": "true",
+        },
         body: JSON.stringify(profile),
     });
 
