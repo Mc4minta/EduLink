@@ -51,61 +51,117 @@ Ensure you have the following installed:
    VITE_SUPABASE_PUBLISHABLE_KEY="your-publishable-key"
    # Optional: Only required if using ngrok for testing
    VITE_ALLOWED_HOSTS="your-ngrok-id.ngrok-free.app"
+   VITE_API_URL=
    ```
 
-### Running the Application
+# EduLink 🎓
 
-Start the development server:
+EduLink connects students with professors for research, mentorship, and academic collaboration. This repository contains the frontend (Vite + React + TypeScript) and a companion backend service located in `EduLink-Backend`.
+
+**Status:** Active development — frontend is a Vite TypeScript app; backend is a Python API (see `EduLink-Backend`).
+
+**Quick Links**
+- Frontend: [EduLink/](EduLink/)
+- Backend: [EduLink-Backend/](EduLink-Backend/)
+
+## Features
+
+- Smart matching between students and professors
+- Rich profiles for students and faculty
+- Tag-based research interests and search
+- Responsive dashboard and mobile-friendly UI
+
+## Tech Stack
+
+- Frontend: React + TypeScript + Vite
+- Styling: Tailwind CSS + shadcn/ui
+- Data & Auth: Supabase (client-side integration)
+- Backend: Python (FastAPI-style project in `EduLink-Backend`)
+- State & Data Fetching: TanStack Query
+
+## Quick Start (Frontend)
+
+1. Install dependencies (choose one):
+
+```bash
+# using bun (if you use bun):
+bun install
+
+# or npm:
+npm install
+
+# or pnpm:
+pnpm install
+```
+
+2. Start the dev server:
 
 ```bash
 npm run dev
+# or
+bun run dev
+# dev server runs via Vite (script `dev`)
 ```
 
-The application will be available at `http://localhost:8080` (or the port shown in your terminal).
+3. Open the app in your browser at the URL shown by Vite (commonly `http://localhost:5173`).
 
-## 📜 Available Scripts
+Notes:
+- Confirm scripts in `package.json` (`dev`, `build`, `preview`).
+- If you see PowerShell execution errors on Windows, run PowerShell as Administrator and:
 
-- `npm run dev`: Starts the development server with HMR.
-- `npm run build`: Builds the application for production.
-- `npm run lint`: Runs ESLint to check for code quality issues.
-- `npm run preview`: Locally preview the production build.
-
-## 📂 Project Structure
-
-```
-src/
-├── components/     # Reusable UI components (shadcn/ui, etc.)
-├── hooks/          # Custom React hooks
-├── integrations/   # Third-party integrations (Supabase)
-├── lib/            # Utility functions and libraries
-├── pages/          # Main application views (Dashboard, Auth, etc.)
-├── App.tsx         # Main entry point and routing configuration
-└── main.tsx        # React root rendering
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 ```
 
-## 🔧 Troubleshooting
+## Backend Quick Start (EduLink-Backend)
 
-### PowerShell Execution Policy Error
-If you encounter an error regarding script execution on Windows (e.g., `npm.ps1 cannot be loaded`):
+1. Create and activate a Python virtual environment (Windows example):
 
-1. Open PowerShell as Administrator.
-2. Run the following command:
-   ```powershell
-   Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-   ```
-3. Try running the npm command again.
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
 
-## 🌐 Remote Access (Optional)
+2. Install dependencies:
 
-If you need to share your local development server or test on mobile devices, you can use **ngrok**.
+```bash
+pip install -r EduLink-Backend/requirements.txt
+```
 
-1. **Start the dev server**: `npm run dev`
-2. **Start ngrok** (in a separate terminal):
-   ```bash
-   ngrok http 8080
-   ```
-3. **Update Environment**: Copy the generated ngrok URL (e.g., `https://xyz.ngrok-free.app`) and update `VITE_ALLOWED_HOSTS` in your `.env` file.
+3. Run the backend (example):
+
+```bash
+python EduLink-Backend/main.py
+# or use an ASGI server like:
+uvicorn EduLink-Backend.main:app --reload
+```
+
+Environment variables (examples):
+
+- `VITE_SUPABASE_URL` — Supabase project URL (frontend)
+- `VITE_SUPABASE_PUBLISHABLE_KEY` — Supabase public key (frontend)
+- Backend-specific DB and API keys: check `EduLink-Backend/config.py`
+
+## Development Notes
+
+- Project scripts are in `package.json` (frontend). See the `scripts` section for `dev`, `build`, `preview`, and `lint`.
+- Frontend source lives in `src/` with pages under `src/pages/` and components under `src/components/`.
+- Backend API routes are under `EduLink-Backend/api/` with services in `EduLink-Backend/services/`.
+
+## Troubleshooting
+
+- If ports conflict, Vite will suggest a different port — use the displayed URL.
+- For Windows PowerShell script policy issues, see the PowerShell command above.
+
+## Contributing
+
+- Open an issue for bugs or feature requests.
+- Fork, create a feature branch, and submit a PR with clear changes and tests when applicable.
+
+## License
+
+This project does not include a license file in the repo. Add a `LICENSE` file to specify terms.
 
 ---
 
-Developed by the EduLink Team.
+Edited: `EduLink/README.md` — simplified setup, clear run commands, and links to backend. If you want, I can also update `EduLink-Backend/README.md` with matching quick-start instructions.
