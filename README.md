@@ -84,56 +84,42 @@ EduLink connects students with professors for research, mentorship, and academic
 1. Install dependencies (choose one):
 
 ```bash
-# using bun (if you use bun):
-bun install
-
-# or npm:
 npm install
-
-# or pnpm:
-pnpm install
 ```
 
 2. Start the dev server:
 
 ```bash
 npm run dev
-# or
-bun run dev
-# dev server runs via Vite (script `dev`)
 ```
 
-3. Open the app in your browser at the URL shown by Vite (commonly `http://localhost:5173`).
+3. Open the app in your browser at the URL shown by Vite (commonly `http://localhost:8080`).
 
 Notes:
-- Confirm scripts in `package.json` (`dev`, `build`, `preview`).
 - If you see PowerShell execution errors on Windows, run PowerShell as Administrator and:
 
 ```powershell
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 ```
 
-## Backend Quick Start (EduLink-Backend)
+## Backend Quick Start (Please read more on [Mc4minta/EduLink-Backend](https://github.com/Mc4minta/EduLink-backend))
 
-1. Create and activate a Python virtual environment (Windows example):
-
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-```
-
-2. Install dependencies:
+1. Install dependencies:
 
 ```bash
 pip install -r EduLink-Backend/requirements.txt
 ```
 
-3. Run the backend (example):
+2. Run the backend
 
 ```bash
-python EduLink-Backend/main.py
-# or use an ASGI server like:
 uvicorn EduLink-Backend.main:app --reload
+```
+
+3. (optional) Exposed via ngrok
+
+```bash
+ngrok http --domain=<custom-domain> 8000
 ```
 
 Environment variables (examples):
