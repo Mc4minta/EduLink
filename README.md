@@ -61,8 +61,8 @@ EduLink connects students with professors for research, mentorship, and academic
 **Status:** Active development — frontend is a Vite TypeScript app; backend is a Python API (see `EduLink-Backend`).
 
 **Quick Links**
-- Frontend: [EduLink/](EduLink/)
-- Backend: [EduLink-Backend/](EduLink-Backend/)
+- Frontend: [EduLink/](github.com/Mc4minta/EduLink)
+- Backend: [EduLink-Backend/](github.com/Mc4minta/EduLink-backend)
 
 ## Features
 
