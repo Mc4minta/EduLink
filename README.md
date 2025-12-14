@@ -113,7 +113,7 @@ pip install -r EduLink-Backend/requirements.txt
 2. Run the backend
 
 ```bash
-uvicorn EduLink-Backend.main:app --reload
+python -m uvicorn EduLink-Backend.main:app --reload
 ```
 
 3. (optional) Exposed via ngrok
