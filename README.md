@@ -113,7 +113,7 @@ pip install -r EduLink-Backend/requirements.txt
 2. Run the backend
 
 ```bash
-python -m uvicorn EduLink-Backend.main:app --reload --lifespan off
+python -m uvicorn main:app --reload --lifespan off
 ```
 
 3. (optional) Exposed via ngrok
