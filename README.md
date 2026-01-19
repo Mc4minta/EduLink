@@ -1,24 +1,3 @@
-## About this fork
-This repository is forked from the original team project.
-
-## My Role: Backend Developer
-I was responsible for designing and implementing the backend system, including:
-
-### Responsibilities
-- Designed fastapi API architecture
-- Implemented CRUD operations (Create, Read, Update, Delete)
-- Connected backend with database
-- Data validation and error handling
-- API testing and debugging
-
-### Technologies Used
-- fastapi
-- Database: Supabase
-- Git & GitHub
-
-## Original Repository
-👉 https://github.com/ชื่อเพื่อน/ชื่อ-repo
-
 # EduLink 🎓
 
 EduLink is a modern web platform designed to bridge the gap between students and professors. It facilitates connections for research opportunities, mentorship, and academic collaboration. Built with performance and user experience in mind, it utilizes a cutting-edge React stack.
